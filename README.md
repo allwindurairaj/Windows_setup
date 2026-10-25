@@ -29,6 +29,24 @@ Sets up a Windows development machine in one go using [Chocolatey](https://choco
 
 3. Reboot when it finishes. Some packages (Docker Desktop, VirtualBox, Sysmon) need a restart.
 
+### Options
+
+| Parameter | What it does |
+|---|---|
+| `-Skip <categories>` | Leave out categories: `Favorites`, `Languages`, `CLIs`, `Monitoring`, `VSCodeExtensions`, `NonEssentials` |
+| `-Only <categories>` | Install only these categories |
+| `-IncludeOffice` | Also install Microsoft 365 (64-bit) |
+| `-SkipOracle` | Don't install Oracle SQL Developer (otherwise you're prompted for your Oracle login) |
+| `-LogPath <file>` | Where to save the log (default: `%TEMP%\windows-setup-<timestamp>.log`) |
+
+```powershell
+.\setup.ps1 -Skip NonEssentials,Monitoring    # lean work machine
+.\setup.ps1 -Only CLIs -SkipOracle            # just the cloud/k8s CLIs
+Get-Help .\setup.ps1 -Full                    # built-in help
+```
+
+If a package fails, the script keeps going and lists the failures at the end.
+
 ### Run it straight from GitHub
 
 ```powershell
@@ -53,7 +71,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 | Java | `jdk8` |
 | Databases | `oracle-sql-developer`, `dbeaver`, `pgadmin4` |
 | Git | `git`, `tortoisegit`, `github-desktop` |
-| File transfer & remote | `filezilla`, `winscp`, `mobaxterm`, `tigervnc`, `citrix-receiver` |
+| File transfer & remote | `filezilla`, `winscp`, `mobaxterm`, `tigervnc`, `citrix-workspace` |
 | Security & crypto | `pgptool`, `gnupg`, `openssl` |
 | Utilities | `7zip`, `curl`, `sysinternals`, `cpu-z`, `drawio`, `postman` |
 | Media & docs | `adobereader`, `vlc` |
@@ -62,7 +80,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 
 ### Programming languages & dev stack
 
-`golang`, `python3`, `nodejs`, `ruby`, `typescript`, `graalvm-java8`, `numpy`, `chef-workstation`, `terraform`, `xampp-80`, `docker-desktop`, `mongodb`, `mongodb-compass`, `k3d`, `wingide101`, `vscode-intellicode`, `traefik`, `tomcat`
+`golang`, `python3`, `nodejs`, `ruby`, `typescript`, `graalvm-java8`, `numpy` (via pip), `chef-workstation`, `terraform`, `xampp-80`, `docker-desktop`, `mongodb`, `mongodb-compass`, `k3d`, `wingide101`, `vscode-intellicode`, `traefik`, `tomcat`
 
 ### CLIs
 
@@ -90,24 +108,19 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 
 ### Optional: Microsoft Office
 
-Commented out by default. Uncomment this line to install 64-bit Microsoft 365 without Publisher, OneDrive, OneNote, Lync, and Groove:
+Not installed by default. Run with `-IncludeOffice` to install 64-bit Microsoft 365 without Publisher, OneDrive, OneNote, Lync, and Groove:
 
 ```powershell
-choco install microsoft-office-deployment -y --params="'/64bit /Shared /Product:O365ProPlusRetail /Exclude=Publisher,OneDrive,OneNote,Lync,Groove'"
+.\setup.ps1 -IncludeOffice
 ```
 
 ## Oracle SQL Developer credentials
 
-`oracle-sql-developer` downloads from Oracle, which needs an Oracle account. **Don't put your credentials in the script.** Pass them in when you run it:
-
-```powershell
-$cred = Get-Credential -Message "Oracle account"
-choco install oracle-sql-developer --params="'/Username:$($cred.UserName) /Password:$($cred.GetNetworkCredential().Password)'"
-```
+`oracle-sql-developer` downloads from Oracle, which needs an Oracle account. The script asks for your Oracle login when it gets to that package, so no credentials are stored in the repo. Click **Cancel** to skip it, or run with `-SkipOracle`.
 
 ## Customizing
 
-- Comment out (`#`) any line you don't want.
+- Add or remove packages in the `$Packages` lists at the top of `setup.ps1`.
 - Remove the **Non-essentials** section for a lean work machine.
 - Keep everything up to date later with:
 
