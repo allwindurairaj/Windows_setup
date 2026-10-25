@@ -1,0 +1,110 @@
+#install chocolatey
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+# Stop asking for confirmation... I know what I am doing... 
+choco feature enable -n allowGlobalConfirmation
+
+#choco install microsoft-office-deployment -y --params="'/64bit /Shared /Product:O365ProPlusRetail /Exclude=Publisher,OneDrive,OneNote,Lync,Groove'"
+choco install googlechrome
+
+
+# Install Favorites
+choco install jdk8
+choco install googlechrome
+#set Oracle credentials for downloads
+choco install oracle-sql-developer --params="'/Username:Allwin.Jayapal@rci.rogers.com /Password:Windows@1'"
+choco install notepadplusplus
+choco install 7zip
+choco install vscode
+choco install filezilla
+choco install winscp
+choco install pgptool
+choco install adobereader
+choco install vlc
+choco install git
+choco install zoom
+choco install mobaxterm
+choco install tigervnc
+choco install gnupg
+choco install microsoft-edge
+choco install sysinternals
+choco install curl
+choco install virtualbox
+choco install tortoisegit
+choco install postman
+choco install drawio
+choco install citrix-receiver
+choco install cpu-z
+choco install intellijidea-community
+choco install pycharm-community
+choco install dbeaver
+choco install github-desktop
+choco install openssl
+choco install pgadmin4
+
+#Programming languages
+choco install golang
+choco install python3
+choco install nodejs
+choco install chef-workstation
+choco install terraform
+choco install numpy
+choco install ruby
+choco install typescript
+choco install graalvm-java8
+choco install xampp-80
+choco install docker-desktop
+choco install mongodb
+choco install mongodb-compass
+choco install k3d
+choco install wingide101
+choco install vscode-intellicode
+choco install traefik
+choco install tomcat
+
+# CLI's
+choco install azure-cli
+choco install awscli
+choco install az.powershell
+choco install argocd-cli
+choco install gh
+choco install kubernetes-cli
+choco install serverless
+
+# Monitoring and System Tools
+
+choco install prometheus-windows-exporter.install
+choco install wireshark
+choco install sandboxie-plus
+choco install speedtest
+choco install teamviewer
+choco install adexplorer
+choco install sysmon
+choco install autoruns
+choco install procmon
+choco install hashmyfiles
+choco install malwarebytes
+choco install ccleaner
+choco install rdmfree
+
+# vscode Extensions
+
+choco install vscode-spring-boot
+choco install vscode-mongodb
+
+# Non Essentials
+
+choco install itunes
+choco install dropbox
+choco install slack
+choco install rocketchat
+choco install signal
+choco install brave
+choco install evernote
+choco install chromium
+choco install electron
+choco install etcher
+choco install tableau-public
+choco install darktable
+choco install whatsapp
+choco install ubiquiti-unifi-controller
+choco install libreoffice-fresh
