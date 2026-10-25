@@ -1,17 +1,18 @@
+#     Author : Allwin
+#     Date   : 2026-10-24
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Sets up a Windows development machine with Chocolatey.
 
 .DESCRIPTION
-    Installs Chocolatey (if missing), then installs packages grouped by category:
-    Favorites, Languages, CLIs, Monitoring, VSCodeExtensions and NonEssentials.
+    Installs Chocolatey (if missing), then installs packages grouped by category.
+    Optionally installs WSL (Windows Subsystem for Linux) at the end.
     Failed packages are collected and listed at the end instead of stopping the run.
     A full transcript is written to the log file.
 
 .PARAMETER Skip
     One or more categories to leave out.
-    Valid values: Favorites, Languages, CLIs, Monitoring, VSCodeExtensions, NonEssentials
 
 .PARAMETER Only
     Install only these categories (overrides -Skip).
@@ -21,6 +22,9 @@
 
 .PARAMETER SkipOracle
     Don't install Oracle SQL Developer (it needs an Oracle account to download).
+
+.PARAMETER SkipWSL
+    Don't install WSL.
 
 .PARAMETER LogPath
     Where to write the transcript. Defaults to %TEMP%\windows-setup-<timestamp>.log
@@ -34,25 +38,35 @@
     Lean work machine.
 
 .EXAMPLE
-    .\setup.ps1 -Only CLIs -SkipOracle
-    Only the cloud and Kubernetes CLIs.
+    .\setup.ps1 -Only Terminal,CLITools -SkipOracle -SkipWSL
+    Just the terminal and command-line tools.
 
 .NOTES
+    Author : Allwin
+    Date   : 2026-10-24
+
+    Categories: Favorites, Terminal, CLITools, Languages, Containers, Cloud,
+                ApiTools, Productivity, Monitoring, VSCodeExtensions, NonEssentials
+
     Run from an elevated PowerShell:
         Set-ExecutionPolicy Bypass -Scope Process -Force
         .\setup.ps1
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('Favorites', 'Languages', 'CLIs', 'Monitoring', 'VSCodeExtensions', 'NonEssentials')]
+    [ValidateSet('Favorites', 'Terminal', 'CLITools', 'Languages', 'Containers', 'Cloud',
+                 'ApiTools', 'Productivity', 'Monitoring', 'VSCodeExtensions', 'NonEssentials')]
     [string[]]$Skip = @(),
 
-    [ValidateSet('Favorites', 'Languages', 'CLIs', 'Monitoring', 'VSCodeExtensions', 'NonEssentials')]
+    [ValidateSet('Favorites', 'Terminal', 'CLITools', 'Languages', 'Containers', 'Cloud',
+                 'ApiTools', 'Productivity', 'Monitoring', 'VSCodeExtensions', 'NonEssentials')]
     [string[]]$Only = @(),
 
     [switch]$IncludeOffice,
 
     [switch]$SkipOracle,
+
+    [switch]$SkipWSL,
 
     [string]$LogPath = (Join-Path $env:TEMP ("windows-setup-{0:yyyyMMdd-HHmmss}.log" -f (Get-Date)))
 )
@@ -64,7 +78,7 @@ $ErrorActionPreference = 'Stop'
 
 $Packages = [ordered]@{
     Favorites        = @(
-        'jdk8'
+        'temurin25'             # OpenJDK 25 (LTS), replaces jdk8
         'googlechrome'
         'microsoft-edge'
         'notepadplusplus'
@@ -84,7 +98,6 @@ $Packages = [ordered]@{
         'curl'
         'virtualbox'
         'tortoisegit'
-        'postman'
         'drawio'
         'citrix-workspace'      # replaces deprecated citrix-receiver
         'cpu-z'
@@ -96,34 +109,91 @@ $Packages = [ordered]@{
         'pgadmin4'
     )
 
+    Terminal         = @(
+        'microsoft-windows-terminal'
+        'powershell-core'
+        'oh-my-posh'
+        'starship'
+        'nerd-fonts-cascadiacode'
+        'gsudo'
+    )
+
+    CLITools         = @(
+        'ripgrep'
+        'fzf'
+        'jq'
+        'yq'
+        'bat'
+        'lazygit'
+        'delta'
+        'neovim'
+    )
+
     Languages        = @(
         'golang'
         'python3'
-        'nodejs'
-        'chef-workstation'
-        'terraform'
+        'uv'
+        'nodejs-lts'            # LTS Node; typescript etc. come from npm below
+        'pnpm'
         'ruby'
-        'typescript'
-        'graalvm-java8'
-        'xampp-80'
-        'docker-desktop'
+        'rustup.install'
+        'dotnet-sdk'
+        'visualstudio2022community'
+        'maven'
+        'gradle'
+        'graalvm'               # GraalVM, latest Java (graalvm-java8 is no longer updated)
+        'xampp-81'              # newest XAMPP on Chocolatey
+        'tomcat'
         'mongodb'
         'mongodb-compass'
-        'k3d'
         'wingide101'
         'vscode-intellicode'
-        'traefik'
-        'tomcat'
     )
 
-    CLIs             = @(
-        'azure-cli'
-        'awscli'
-        'az.powershell'
-        'argocd-cli'
-        'gh'
+    Containers       = @(
+        'docker-desktop'
+        'podman-desktop'
         'kubernetes-cli'
-        'serverless'
+        'kubernetes-helm'
+        'k9s'
+        'kubectx'
+        'k3d'
+        'kind'
+        'minikube'
+        'argocd-cli'
+    )
+
+    Cloud            = @(
+        'azure-cli'
+        'az.powershell'
+        'azd'
+        'awscli'
+        'gcloudsdk'
+        'gh'
+        'terraform'
+        'terragrunt'
+        'tflint'
+        'packer'
+        'vault'
+        'chef-workstation'
+    )
+
+    ApiTools         = @(
+        'postman'
+        'bruno'
+        'insomnia-rest-api-client'
+        'ngrok'
+        'mkcert'
+    )
+
+    Productivity     = @(
+        'powertoys'
+        'everything'
+        'sharex'
+        'obsidian'
+        'bitwarden'
+        'keepassxc'
+        'jetbrainstoolbox'
     )
 
     Monitoring       = @(
@@ -139,7 +209,7 @@ $Packages = [ordered]@{
         'hashmyfiles'
         'malwarebytes'
         'ccleaner'
-        'rdmfree'
+        'rdm'                   # Remote Desktop Manager (replaces rdmfree)
     )
 
     VSCodeExtensions = @(
@@ -160,14 +230,21 @@ $Packages = [ordered]@{
         'etcher'
         'tableau-public'
         'darktable'
-        'whatsapp'
         'ubiquiti-unifi-controller'
         'libreoffice-fresh'
     )
 }
 
-# Python packages installed with pip after python3 (numpy is not a Chocolatey package)
+# Extra --params for specific packages
+$PackageParams = @{
+    # Add to PATH and set JAVA_HOME
+    'temurin25' = '/ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJavaHome /INSTALLDIR=C:\Program Files\Eclipse Adoptium\jdk-25'
+}
+
+# Installed after the Languages category with pip / npm
+# (the Chocolatey versions of these are outdated or pull in a second copy of Node)
 $PipPackages = @('numpy')
+$NpmPackages = @('typescript', 'yarn', 'serverless')
 
 #endregion
 
@@ -224,6 +301,10 @@ function Install-ChocoPackage {
 
     # Native stderr must not become a terminating error under Windows PowerShell 5.1
     $ErrorActionPreference = 'Continue'
+
+    if (-not $PackageParameters -and $PackageParams.ContainsKey($Name)) {
+        $PackageParameters = $PackageParams[$Name]
+    }
 
     $chocoArgs = @('install', $Name, '-y', '--no-progress', '--limit-output')
     if ($PackageParameters) { $chocoArgs += @('--params', $PackageParameters) }
@@ -290,6 +371,54 @@ function Install-PipPackages {
     }
 }
 
+function Install-NpmPackages {
+    param([string[]]$Names)
+
+    $ErrorActionPreference = 'Continue'
+    Update-PathFromRegistry
+    $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
+    if (-not $npm) {
+        Write-Host 'npm not found on PATH; skipping npm packages.' -ForegroundColor DarkYellow
+        $Names | ForEach-Object { $script:Failed.Add("npm:$_") }
+        return
+    }
+
+    foreach ($name in $Names) {
+        Write-Host "-> npm $name" -ForegroundColor White -NoNewline
+        & $npm.Source install --global $name --silent 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $script:Installed.Add("npm:$name")
+            Write-Host '  OK' -ForegroundColor Green
+        }
+        else {
+            $script:Failed.Add("npm:$name")
+            Write-Host "  FAILED (exit $LASTEXITCODE)" -ForegroundColor Red
+        }
+    }
+}
+
+function Install-WSL {
+    $ErrorActionPreference = 'Continue'
+    Write-Host '-> wsl (Ubuntu)' -ForegroundColor White -NoNewline
+
+    & wsl.exe --status 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host '  already installed' -ForegroundColor Green
+        return
+    }
+
+    & wsl.exe --install --no-launch 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        $script:Installed.Add('wsl')
+        $script:RebootRequired = $true
+        Write-Host '  OK (reboot, then open "Ubuntu" from Start to finish setup)' -ForegroundColor Yellow
+    }
+    else {
+        $script:Failed.Add('wsl')
+        Write-Host "  FAILED (exit $LASTEXITCODE)" -ForegroundColor Red
+    }
+}
+
 #endregion
 
 #region ---- Main ---------------------------------------------------------------
@@ -319,8 +448,9 @@ try {
             Install-OracleSqlDeveloper
         }
 
-        if ($category -eq 'Languages' -and $PipPackages.Count) {
-            Install-PipPackages -Names $PipPackages
+        if ($category -eq 'Languages') {
+            if ($PipPackages.Count) { Install-PipPackages -Names $PipPackages }
+            if ($NpmPackages.Count) { Install-NpmPackages -Names $NpmPackages }
         }
     }
 
@@ -328,6 +458,11 @@ try {
         Write-Section 'Microsoft Office'
         Install-ChocoPackage -Name 'microsoft-office-deployment' `
             -PackageParameters "'/64bit /Shared /Product:O365ProPlusRetail /Exclude=Publisher,OneDrive,OneNote,Lync,Groove'"
+    }
+
+    if (-not $SkipWSL) {
+        Write-Section 'WSL'
+        Install-WSL
     }
 }
 finally {
@@ -347,7 +482,7 @@ finally {
 
     if ($script:RebootRequired) {
         Write-Host ''
-        Write-Host 'One or more packages need a reboot to finish installing.' -ForegroundColor Yellow
+        Write-Host 'Reboot required to finish installing some packages.' -ForegroundColor Yellow
     }
 
     Stop-Transcript | Out-Null
